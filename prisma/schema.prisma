@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Room {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key             String    @unique @db.VarChar(12)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  lastActivity    DateTime  @default(now()) @map("last_activity") @db.Timestamptz
+  isArchived      Boolean   @default(false) @map("is_archived")
+  participantCount Int      @default(0) @map("participant_count")
+  codeSnapshot    String?   @map("code_snapshot") @db.Text
+  yjsState        Bytes?    @map("yjs_state")
+  
+  participants    Participant[]
+  compileJobs     CompileJob[]
+  snapshots       RoomSnapshot[]
+  
+  @@index([key])
+  @@index([lastActivity])
+  @@map("rooms")
+}
+
+model Participant {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roomId         String    @map("room_id") @db.Uuid
+  userId         String    @map("user_id") @db.VarChar(255)
+  joinedAt       DateTime  @default(now()) @map("joined_at") @db.Timestamptz
+  lastSeen       DateTime  @default(now()) @map("last_seen") @db.Timestamptz
+  isActive       Boolean   @default(true) @map("is_active")
+  cursorPosition Json?     @map("cursor_position")
+  userColor      String?   @map("user_color") @db.VarChar(7)
+  
+  room           Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  
+  @@index([roomId])
+  @@index([userId])
+  @@map("participants")
+}
+
+model CompileJob {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roomId        String    @map("room_id") @db.Uuid
+  userId        String    @map("user_id") @db.VarChar(255)
+  code          String    @db.Text
+  options       Json
+  status        String    @default("queued") @db.VarChar(20)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  startedAt     DateTime? @map("started_at") @db.Timestamptz
+  completedAt   DateTime? @map("completed_at") @db.Timestamptz
+  stdout        String?   @db.Text
+  stderr        String?   @db.Text
+  exitCode      Int?      @map("exit_code")
+  executionTime Int?      @map("execution_time")
+  memoryUsed    Int?      @map("memory_used")
+  
+  room          Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  
+  @@index([roomId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("compile_jobs")
+}
+
+model RoomSnapshot {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roomId       String   @map("room_id") @db.Uuid
+  content      String   @db.Text
+  yjsState     Bytes?   @map("yjs_state")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  snapshotType String   @default("auto") @map("snapshot_type") @db.VarChar(20)
+  
+  room         Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  
+  @@index([roomId])
+  @@index([createdAt])
+  @@map("room_snapshots")
+}
