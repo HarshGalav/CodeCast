@@ -34,7 +34,7 @@
   - Add WebSocket error handling and reconnection logic
   - _Requirements: 2.2, 2.5, 3.6_
 
-- [ ] 5. Yjs document management and persistence
+- [x] 5. Yjs document management and persistence
 
   - Initialize Yjs documents for new rooms with proper configuration
   - Implement Yjs state persistence to PostgreSQL database
@@ -43,7 +43,7 @@
   - Add conflict resolution and document integrity validation
   - _Requirements: 1.3, 3.1, 3.2, 6.1, 6.2_
 
-- [ ] 6. Docker container setup for secure code execution
+- [x] 6. Docker container setup for secure code execution
 
   - Create secure Dockerfile for C++ compilation environment with g++ and security hardening
   - Implement container creation with strict security policies (--net=none, memory limits, CPU limits, --pids-limit, --no-new-privileges)
