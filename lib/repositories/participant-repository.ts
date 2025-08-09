@@ -11,7 +11,7 @@ export class ParticipantRepository {
   /**
    * Create a new participant
    */
-  static async create(data: CreateParticipantInput): Promise<Participant> {
+  async create(data: CreateParticipantInput): Promise<Participant> {
     try {
       return await prisma.participant.create({
         data,
@@ -24,7 +24,7 @@ export class ParticipantRepository {
   /**
    * Find participant by room and user ID
    */
-  static async findByRoomAndUser(
+  async findByRoomAndUser(
     roomId: string, 
     userId: string
   ): Promise<Participant | null> {
@@ -43,7 +43,7 @@ export class ParticipantRepository {
   /**
    * Find all active participants in a room
    */
-  static async findActiveByRoom(roomId: string): Promise<Participant[]> {
+  async findActiveByRoomId(roomId: string): Promise<Participant[]> {
     try {
       return await prisma.participant.findMany({
         where: {
@@ -60,7 +60,7 @@ export class ParticipantRepository {
   /**
    * Update participant data
    */
-  static async update(
+  async update(
     id: string, 
     data: UpdateParticipantInput
   ): Promise<Participant> {
@@ -80,7 +80,7 @@ export class ParticipantRepository {
   /**
    * Update participant's cursor position
    */
-  static async updateCursorPosition(
+  async updateCursorPosition(
     roomId: string,
     userId: string,
     cursorPosition: CursorPosition
@@ -107,7 +107,7 @@ export class ParticipantRepository {
   /**
    * Mark participant as active
    */
-  static async markActive(roomId: string, userId: string): Promise<Participant> {
+  async markActive(roomId: string, userId: string): Promise<Participant> {
     try {
       // First try to update existing participant
       const existing = await this.findByRoomAndUser(roomId, userId)
@@ -126,7 +126,7 @@ export class ParticipantRepository {
       return await this.create({
         room: { connect: { id: roomId } },
         userId,
-        userColor: this.generateUserColor(),
+        userColor: ParticipantRepository.generateUserColor(),
         isActive: true,
       })
     } catch (error) {
@@ -137,7 +137,7 @@ export class ParticipantRepository {
   /**
    * Mark participant as inactive
    */
-  static async markInactive(roomId: string, userId: string): Promise<Participant | null> {
+  async markInactive(roomId: string, userId: string): Promise<Participant | null> {
     try {
       const participant = await this.findByRoomAndUser(roomId, userId)
       
@@ -160,7 +160,7 @@ export class ParticipantRepository {
   /**
    * Remove participant from room
    */
-  static async remove(roomId: string, userId: string): Promise<void> {
+  async remove(roomId: string, userId: string): Promise<void> {
     try {
       await prisma.participant.deleteMany({
         where: {
@@ -176,7 +176,7 @@ export class ParticipantRepository {
   /**
    * Find inactive participants for cleanup
    */
-  static async findInactiveParticipants(minutesInactive: number = 30): Promise<Participant[]> {
+  async findInactiveParticipants(minutesInactive: number = 30): Promise<Participant[]> {
     try {
       const cutoffDate = new Date(Date.now() - minutesInactive * 60 * 1000)
       
@@ -195,7 +195,7 @@ export class ParticipantRepository {
   /**
    * Clean up inactive participants
    */
-  static async cleanupInactive(minutesInactive: number = 30): Promise<number> {
+  async cleanupInactive(minutesInactive: number = 30): Promise<number> {
     try {
       const cutoffDate = new Date(Date.now() - minutesInactive * 60 * 1000)
       
@@ -210,6 +210,29 @@ export class ParticipantRepository {
       })
 
       return result.count
+    } catch (error) {
+      handleDatabaseError(error)
+    }
+  }
+
+  /**
+   * Update participant presence
+   */
+  async updatePresence(roomId: string, userId: string, isActive: boolean): Promise<Participant | null> {
+    try {
+      const participant = await this.findByRoomAndUser(roomId, userId)
+      
+      if (!participant) {
+        return null
+      }
+
+      return await prisma.participant.update({
+        where: { id: participant.id },
+        data: {
+          isActive,
+          lastSeen: new Date(),
+        },
+      })
     } catch (error) {
       handleDatabaseError(error)
     }

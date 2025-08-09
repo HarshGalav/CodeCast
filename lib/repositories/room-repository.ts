@@ -10,10 +10,10 @@ export class RoomRepository {
   /**
    * Create a new room with a unique key
    */
-  static async create(data: Omit<CreateRoomInput, 'key'>): Promise<Room> {
+  async create(data: Omit<CreateRoomInput, 'key'>): Promise<Room> {
     try {
       // Generate a unique room key
-      const key = await this.generateUniqueKey()
+      const key = await RoomRepository.generateUniqueKey()
       
       return await prisma.room.create({
         data: {
@@ -29,7 +29,7 @@ export class RoomRepository {
   /**
    * Find a room by its unique key
    */
-  static async findByKey(key: string): Promise<RoomWithParticipants | null> {
+  async findByKey(key: string): Promise<RoomWithParticipants | null> {
     try {
       return await prisma.room.findUnique({
         where: { key },
@@ -48,7 +48,7 @@ export class RoomRepository {
   /**
    * Find a room by its ID
    */
-  static async findById(id: string): Promise<RoomWithParticipants | null> {
+  async findById(id: string): Promise<RoomWithParticipants | null> {
     try {
       return await prisma.room.findUnique({
         where: { id },
@@ -67,7 +67,7 @@ export class RoomRepository {
   /**
    * Update a room's data
    */
-  static async update(id: string, data: UpdateRoomInput): Promise<Room> {
+  async update(id: string, data: UpdateRoomInput): Promise<Room> {
     try {
       return await prisma.room.update({
         where: { id },
@@ -84,7 +84,7 @@ export class RoomRepository {
   /**
    * Update room's code snapshot
    */
-  static async updateCodeSnapshot(
+  async updateCodeSnapshot(
     id: string, 
     codeSnapshot: string, 
     yjsState?: Buffer
@@ -104,9 +104,21 @@ export class RoomRepository {
   }
 
   /**
+   * Update room snapshot (alias for updateCodeSnapshot)
+   */
+  async updateSnapshot(
+    id: string, 
+    content: string, 
+    yjsState?: Uint8Array
+  ): Promise<Room> {
+    const yjsBuffer = yjsState ? Buffer.from(yjsState) : undefined;
+    return this.updateCodeSnapshot(id, content, yjsBuffer);
+  }
+
+  /**
    * Increment participant count
    */
-  static async incrementParticipantCount(id: string): Promise<Room> {
+  async incrementParticipantCount(id: string): Promise<Room> {
     try {
       return await prisma.room.update({
         where: { id },
@@ -123,7 +135,7 @@ export class RoomRepository {
   /**
    * Decrement participant count
    */
-  static async decrementParticipantCount(id: string): Promise<Room> {
+  async decrementParticipantCount(id: string): Promise<Room> {
     try {
       return await prisma.room.update({
         where: { id },
@@ -140,7 +152,7 @@ export class RoomRepository {
   /**
    * Find inactive rooms for archival
    */
-  static async findInactiveRooms(hoursInactive: number = 24): Promise<Room[]> {
+  async findInactiveRooms(hoursInactive: number = 24): Promise<Room[]> {
     try {
       const cutoffDate = new Date(Date.now() - hoursInactive * 60 * 60 * 1000)
       
@@ -159,7 +171,7 @@ export class RoomRepository {
   /**
    * Archive a room
    */
-  static async archive(id: string): Promise<Room> {
+  async archive(id: string): Promise<Room> {
     try {
       return await prisma.room.update({
         where: { id },
@@ -173,7 +185,7 @@ export class RoomRepository {
   /**
    * Delete a room and all related data
    */
-  static async delete(id: string): Promise<void> {
+  async delete(id: string): Promise<void> {
     try {
       await prisma.room.delete({
         where: { id },

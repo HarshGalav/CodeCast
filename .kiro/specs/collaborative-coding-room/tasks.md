@@ -25,7 +25,7 @@
   - Add input validation and error handling for room operations
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 2.1, 2.4_
 
-- [ ] 4. WebSocket infrastructure for real-time communication
+- [x] 4. WebSocket infrastructure for real-time communication
 
   - Set up Socket.io server integration with Next.js API routes
   - Implement WebSocket connection handling and room-based namespacing
